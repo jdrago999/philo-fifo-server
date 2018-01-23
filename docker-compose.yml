@@ -1,0 +1,15 @@
+
+version: '2'
+
+services:
+  server:
+    image: philo/takehome-server
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile
+    volumes:
+      - ./:/opt/app
+    ports:
+      - 8080
+    environment:
+      - TERM=xterm
