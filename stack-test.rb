@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-
+require 'byebug'
 #
 # Intro
 # -----
@@ -369,9 +369,10 @@ class StackTest < Test::Unit::TestCase
   def test_full_stack_ignore
     puts "test_full_stack_ignore"
     expects = []
-    100.times do
+    100.times do |i|
       expects << random_string
       pr = push(expects[-1])
+warn 'push(%d)' % (i + 1)
       assert_equal(0, pr, "expected 0, got #{pr}")
     end
 
@@ -381,7 +382,9 @@ class StackTest < Test::Unit::TestCase
     end
 
     100.times do |i|
+warn 'pop(%d)' % (i + 1)
       r = pop
+warn "Value: '#{r}'"
       s = expects.pop
       assert_equal(s, r, "expected #{s}, got #{r}")
     end
@@ -639,35 +642,44 @@ protected
     client = tcp_socket()
 
     _pop = proc do
+warn 'HERE 1'
       begin
         client.send([0x80].pack("C1"), 0)
       rescue Errno::EPIPE
         #server might have been busy and closed the connection
       end
+warn 'HERE 2'
       begin
         header = client.recv(1).unpack("C1")[0]
       rescue Errno::EPIPE, Errno::ECONNRESET
         return nil # If the server disconnects because it has been > 10s since start
       end
+warn 'HERE 3'
       # busy byte
       if (header == 0xFF)
         return 0xFF
       end
+warn 'HERE 4'
 
       # invalid pop response
       if ((header & 0x80) != 0)
         raise "invalid pop response #{header.inspect}"
       end
+warn 'HERE 5'
 
       payload_length = header & 0x7f
+warn "PAYLOAD_LENGTH(%d)" % payload_length
       payload = ""
       begin
         while payload.length < payload_length
+warn 'HERE 6 - waiting for %d == %d' % [payload.length, payload_length]
           payload += client.recv(payload_length)
         end
       rescue Errno::EPIPE, Errno::ECONNRESET
+warn 'HERE 7'
         return nil # If the server disconnects because it has been > 10s since start
       end
+warn 'HERE 8: payload(%s)' % payload
       return payload
     end
 
@@ -716,4 +728,27 @@ protected
 
     expects
   end
+
+public
+##---------------------------
+
+  def test_simple
+    puts "test_simple"
+    expects = []
+    1.times do |i|
+      expects << random_string
+      pr = push(expects[-1])
+warn 'push(%d)' % (i + 1)
+      assert_equal(0, pr, "expected 0, got #{pr}")
+    end
+
+    1.times do |i|
+warn 'pop(%d)' % (i + 1)
+      r = pop
+warn "Value: '#{r}'"
+      s = expects.pop
+      assert_equal(s, r, "expected #{s}, got #{r}")
+    end
+  end
+
 end
